@@ -1,0 +1,11 @@
+.in-stock {
+    color: #28a745;
+}
+
+.out-stock {
+    color: #dc3545;
+}
+
+.sm-icon {
+    width: 50;
+}
