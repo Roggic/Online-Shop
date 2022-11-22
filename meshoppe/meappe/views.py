@@ -1,7 +1,9 @@
 import django_filters
 from django import forms
-from django.shortcuts import render, redirect
-from django.views.generic import DetailView, ListView
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
+from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
 from django_filters import OrderingFilter
 from django_filters.widgets import RangeWidget
 
@@ -58,7 +60,8 @@ class ProductFilter(django_filters.FilterSet):
 
     localization = django_filters.MultipleChoiceFilter(
         choices=[(i['localization__id'], i['localization__language'])
-                 for i in distinct_values(field='localization', field_related='language').exclude(localization__language__isnull=True)],
+                 for i in distinct_values(field='localization', field_related='language').exclude(
+                localization__language__isnull=True)],
         widget=forms.CheckboxSelectMultiple)
 
     sort = OrderingFilter(fields=(('price', 'price'), ('release_date', 'release_date')),
@@ -105,6 +108,9 @@ class ShopPage(ListView):
     #     return ordering
 
 
+# TODO чтобы у товара было несколько фото надо сделать свой view с добавлением/редактированием товара.
+#  Через админ-панель несколько фото нельзя. Как вариант тут посмотреть:
+# https://forum.djangoproject.com/t/how-to-upload-multiple-images-on-one-field-in-admin-panel-in-django/13493/2
 class ProductPage(DetailView):
     model = Product
     template_name = 'meappe/product.html'
@@ -117,3 +123,25 @@ class ProductPage(DetailView):
         context['genres'] = Genre.objects.filter(products=self.object)
         context['localizations'] = Localization.objects.filter(products=self.object)
         return dict(list(context.items()))
+
+
+class AddProduct(CreateView):
+    form_class = ProductForm
+    template_name = 'meappe/product_form.html'
+    success_url = reverse_lazy('shop')
+    raise_exception = True
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return dict(list(context.items()))
+
+
+class UpdateProduct(UpdateView):
+    model = Product
+    form_class = ProductForm
+    context_object_name = 'product'
+
+
+class DeleteProduct(DeleteView):
+    model = Product
+    success_url = reverse_lazy('shop')

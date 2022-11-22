@@ -55,15 +55,18 @@ class LocalizationAdmin(admin.ModelAdmin):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id', 'get_html_photo', 'name', 'price', 'in_stock', 'release_date', 'category')
+    # list_display = ('id', 'get_html_photo', 'name', 'price', 'in_stock', 'release_date', 'category')
+    list_display = ('id', 'name', 'price', 'in_stock', 'release_date', 'category')
     list_display_links = ('id', 'name')
     search_fields = ('name', 'description')
     list_editable = ('in_stock',)
     list_filter = ('in_stock', 'release_date', 'console', 'category', 'genre')
     prepopulated_fields = {'slug': ('name',)}
-    fields = ('name', 'slug', 'price', 'description', 'in_stock', 'img', 'get_html_photo', 'release_date',
+    fields = ('name', 'slug', 'price', 'description', 'in_stock', 'img', 'release_date',
               'console', 'category', 'genre', 'localization')
-    readonly_fields = ('get_html_photo',)
+    # fields = ('name', 'slug', 'price', 'description', 'in_stock', 'img', 'get_html_photo', 'release_date',
+    #           'console', 'category', 'genre', 'localization')
+    # readonly_fields = ('get_html_photo',)
     save_on_top = True
 
     def get_html_photo(self, object):
@@ -73,11 +76,27 @@ class ProductAdmin(admin.ModelAdmin):
     get_html_photo.short_description = 'Миниатюра'
 
 
+class ImageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'image', 'product')
+    list_display_links = ('id', 'image')
+    list_filter = ('product',)
+    fields = ('image', 'product', 'get_html_photo')
+    readonly_fields = ('get_html_photo',)
+
+    def get_html_photo(self, object):
+        if object.img:
+            return mark_safe(f"<img src='{object.image.url}' width=80>")
+
+    get_html_photo.short_description = 'Миниатюра'
+
+
 admin.site.register(Console, ConsoleAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Localization, LocalizationAdmin)
 admin.site.register(Product, ProductAdmin)
+admin.site.register(Image, ImageAdmin)
+
 
 admin.site.site_title = 'Админ панель магазина MeShoppe'
 admin.site.site_header = 'Админ панель магазина MeShoppe'

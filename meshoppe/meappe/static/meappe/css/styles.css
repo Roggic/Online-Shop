@@ -13,3 +13,20 @@
 .short-width {
     width: 47%;
 }
+
+.form-label {
+    display: inline-block;
+    min-width: 150px;
+    vertical-align: top;
+}
+
+.form-input {
+    width: 96%;
+    font-size: 16px;
+}
+
+.form-error {
+    list-style: none;
+    padding: 0;
+    color: #CC0000;
+}
