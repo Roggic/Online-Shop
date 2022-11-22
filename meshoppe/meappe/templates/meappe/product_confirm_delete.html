@@ -1,0 +1,19 @@
+{% extends 'meappe/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    <div class="row px-xl-5">
+        <div class="col-lg-6 mb-30">
+
+            <form method="POST">
+                {% csrf_token %}
+                Вы уверены что хотите удалить этот товар?
+                <input class="btn btn-primary" type="submit" value="Да">
+                <a class="btn btn-light" href="{% url 'shop' %}">Нет</a>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

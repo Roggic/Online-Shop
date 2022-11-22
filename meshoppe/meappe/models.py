@@ -12,8 +12,6 @@ class Console(models.Model):
     def __str__(self):
         return self.name
 
-
-
     class Meta:
         verbose_name = 'Консоль'
         verbose_name_plural = 'Консоли'
@@ -69,7 +67,8 @@ class Product(models.Model):
     price = models.FloatField(verbose_name='Цена')
     description = models.TextField(null=True, blank=True, verbose_name='Описание')
     in_stock = models.BooleanField(default=True, verbose_name='В наличии')
-    img = models.ImageField(upload_to=img_path, null=True, blank=True, verbose_name='Фото')
+    # img = models.ImageField(upload_to=img_path, null=True, blank=True, verbose_name='Фото')
+    img = models.ManyToManyField(to='Image', related_name='products', blank=True, verbose_name='Фото')
     release_date = models.DateField(null=True, blank=True, verbose_name='Дата выхода')
     console = models.ManyToManyField(to='Console', related_name='products', blank=True, verbose_name='Консоли')
     category = models.ForeignKey(to='Category', null=True, blank=True, on_delete=models.PROTECT,
@@ -88,3 +87,16 @@ class Product(models.Model):
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
         ordering = ['name']
+
+
+class Image(models.Model):
+    image = models.ImageField(upload_to='photos/', null=True, blank=True, verbose_name='Фото')
+    product = models.ForeignKey(to='Product', null=True, blank=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.image.name
+
+    class Meta:
+        verbose_name = 'Фото'
+        verbose_name_plural = 'Фото'
+
