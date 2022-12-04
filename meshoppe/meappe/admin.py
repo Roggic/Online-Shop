@@ -62,7 +62,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = ('in_stock',)
     list_filter = ('in_stock', 'release_date', 'console', 'category', 'genre')
     prepopulated_fields = {'slug': ('name',)}
-    fields = ('name', 'slug', 'price', 'description', 'in_stock', 'img', 'release_date',
+    fields = ('name', 'slug', 'price', 'description', 'in_stock', 'release_date',
               'console', 'category', 'genre', 'localization')
     # fields = ('name', 'slug', 'price', 'description', 'in_stock', 'img', 'get_html_photo', 'release_date',
     #           'console', 'category', 'genre', 'localization')
@@ -77,14 +77,14 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'image', 'product')
-    list_display_links = ('id', 'image')
+    list_display = ('id', 'get_html_photo', 'image', 'order', 'product')
+    list_display_links = ('id', 'get_html_photo', 'image')
     list_filter = ('product',)
-    fields = ('image', 'product', 'get_html_photo')
+    fields = ('image', 'product', 'order', 'get_html_photo')
     readonly_fields = ('get_html_photo',)
 
     def get_html_photo(self, object):
-        if object.img:
+        if object.image:
             return mark_safe(f"<img src='{object.image.url}' width=80>")
 
     get_html_photo.short_description = 'Миниатюра'

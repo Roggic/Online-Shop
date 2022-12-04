@@ -1,5 +1,8 @@
 import django_filters
 from django import forms
+from django.forms import modelformset_factory, inlineformset_factory
+from django.forms.formsets import formset_factory
+from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -119,22 +122,22 @@ class ProductPage(DetailView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['images'] = Image.objects.filter(product=self.object)
         context['consoles'] = Console.objects.filter(products=self.object)
         context['genres'] = Genre.objects.filter(products=self.object)
         context['localizations'] = Localization.objects.filter(products=self.object)
         return dict(list(context.items()))
 
 
-class AddProduct(CreateView):
-    form_class = ProductForm
-    template_name = 'meappe/product_form.html'
-    success_url = reverse_lazy('shop')
-    raise_exception = True
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return dict(list(context.items()))
-
+# class AddProduct(CreateView):
+#     form_class = ProductForm
+#     template_name = 'meappe/product_form.html'
+#     success_url = reverse_lazy('shop')
+#     raise_exception = True
+#
+#     def get_context_data(self, *, object_list=None, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         return dict(list(context.items()))
 
 class UpdateProduct(UpdateView):
     model = Product
@@ -145,3 +148,83 @@ class UpdateProduct(UpdateView):
 class DeleteProduct(DeleteView):
     model = Product
     success_url = reverse_lazy('shop')
+
+
+def add_product(request):
+    ImageFormSet = formset_factory(ImageForm)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        formset = ImageFormSet(request.POST, request.FILES)
+        if all([form.is_valid(), formset.is_valid()]):
+            product = form.save()
+            max_order = get_order_num(product)
+            for img_file in request.FILES.getlist('form-0-image'):
+                image_obj = Image()
+                image_obj.image = img_file
+                image_obj.product = product
+                image_obj.order = max_order
+                image_obj.save()
+                max_order += 1
+            return redirect('shop')
+    else:
+        form = ProductForm()
+        formset = ImageFormSet()
+    return render(request, 'meappe/product_form.html', {'form': form, 'formset': formset})
+
+# TODO смотри блокнот
+def update_product(request, pk):
+    ImageFormSet = formset_factory(ImageForm)
+    queryset = Image.objects.filter(product=pk)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=Product.objects.get(pk=pk))
+        formset = ImageFormSet(request.POST, request.FILES)
+        if all([form.is_valid(), formset.is_valid()]):
+            product = form.save()
+            max_order = get_order_num(product)
+            for img_file in request.FILES.getlist('form-0-image'):
+                image_obj = Image()
+                image_obj.image = img_file
+                image_obj.product = product
+                image_obj.order = max_order
+                image_obj.save()
+                max_order += 1
+            return redirect('shop')
+    else:
+        form = ProductForm(instance=Product.objects.get(pk=pk))
+        formset = ImageFormSet()
+
+    return render(request, 'meappe/product_form.html', {'form': form, 'formset': formset, 'images': queryset})
+
+    # def update_product(request, pk):
+    # ImageFormSet = modelformset_factory(Image, fields={'image'}, extra=1,
+    #                                     widgets={
+    #                                         'image': forms.ClearableFileInput(attrs={'multiple': True,
+    #                                                                                  'accept': 'image/jpeg, image/png, image/webp'}),
+    #                                     })
+    # # ImageFormSet = inlineformset_factory(Product, Image, fields=('image',))
+    # queryset = Image.objects.filter(product=pk)
+    # if request.method == 'POST':
+    #     form = ProductForm(request.POST, instance=Product.objects.get(pk=pk))
+    #     formset = ImageFormSet(request.POST, request.FILES, queryset=queryset)
+    #     print(request.FILES)
+    #     if all([form.is_valid(), formset.is_valid()]):
+    #         product = form.save()
+    #         for img_file in request.FILES.getlist('form-0-image'):
+    #             image_obj = Image()
+    #             image_obj.image = img_file
+    #             image_obj.product = product
+    #             image_obj.save()
+    #         # for inline_form in formset:
+    #         #     if inline_form.cleaned_data:
+    #         #         image = inline_form.save(commit=False)
+    #         #         image.product = product
+    #         #         image.save()
+    #         return redirect('shop')
+    #
+    # else:
+    #     form = ProductForm(instance=Product.objects.get(pk=pk))
+    #     formset = ImageFormSet(queryset=queryset)
+    #
+    # return render(request, 'meappe/product_form.html', {'form': form, 'formset': formset})
