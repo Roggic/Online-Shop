@@ -1,8 +1,9 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Max
-from django.template.defaultfilters import slugify
+from django.db.models import Max, Q
 from django.urls import reverse
+from slugify import slugify
+
 
 # from transliterate import slugify
 
@@ -90,7 +91,7 @@ class Product(models.Model):
         if not self.slug:
             slug_str = f'{self.name}'
             self.slug = slugify(slug_str)
-        slug_exists = Product.objects.filter(slug=self.slug)
+        slug_exists = Product.objects.filter(~Q(id=self.id), slug=self.slug)
         if slug_exists.count() > 0:
             self.slug = f'{self.slug}-2'
         super(Product, self).save(*args, **kwargs)
@@ -108,11 +109,15 @@ def validate_file_extension(value):
 
 
 def get_order_num(product):
-    max_order = Image.objects.filter(product_id=product)\
+    max_order = Image.objects.filter(product_id=product) \
         .aggregate(Max('order'))
-    if max_order['order__max'] == None:
+    if max_order['order__max'] is None:
         max_order['order__max'] = 0
     return max_order['order__max'] + 1
+
+
+def make_new_order(lst):
+    return {f'{v}': i + 1 for i, v in enumerate(lst)}
 
 
 class Image(models.Model):
@@ -133,4 +138,3 @@ class Image(models.Model):
                 name='unique_product_order',
             )
         ]
-

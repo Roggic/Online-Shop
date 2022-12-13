@@ -81,7 +81,7 @@ class ProductFilter(django_filters.FilterSet):
 
 
 class ShopPage(ListView):
-    paginate_by = 6
+    paginate_by = 8
     model = Product
     template_name = 'meappe/shop.html'
     context_object_name = 'products'
@@ -98,8 +98,11 @@ class ShopPage(ListView):
 
     def get_queryset(self):
         queryset = Product.objects.filter(in_stock=True)
-        # queryset = super().get_queryset()
         filter = ProductFilter(self.request.GET, queryset)
+        images = Image.objects.filter(product__in_stock=True)
+        for product in filter.qs:
+            product.images = images.filter(product_id=product.id)
+        # queryset = super().get_queryset()
         return filter.qs
 
     # def get_ordering(self):
@@ -111,9 +114,6 @@ class ShopPage(ListView):
     #     return ordering
 
 
-# TODO чтобы у товара было несколько фото надо сделать свой view с добавлением/редактированием товара.
-#  Через админ-панель несколько фото нельзя. Как вариант тут посмотреть:
-# https://forum.djangoproject.com/t/how-to-upload-multiple-images-on-one-field-in-admin-panel-in-django/13493/2
 class ProductPage(DetailView):
     model = Product
     template_name = 'meappe/product.html'
@@ -166,13 +166,13 @@ def add_product(request):
                 image_obj.order = max_order
                 image_obj.save()
                 max_order += 1
-            return redirect('shop')
+            return redirect('product', product.slug)
     else:
         form = ProductForm()
         formset = ImageFormSet()
     return render(request, 'meappe/product_form.html', {'form': form, 'formset': formset})
 
-# TODO смотри блокнот
+
 def update_product(request, pk):
     ImageFormSet = formset_factory(ImageForm)
     queryset = Image.objects.filter(product=pk)
@@ -182,6 +182,26 @@ def update_product(request, pk):
         formset = ImageFormSet(request.POST, request.FILES)
         if all([form.is_valid(), formset.is_valid()]):
             product = form.save()
+
+            # Удаляю удаленные фото
+            images_to_delete = request.POST.getlist('images-delete')
+            for i in images_to_delete:
+                Image.objects.get(pk=int(i)).delete()
+
+            # Сохраняю новый порядок фото
+            new_order = request.POST.getlist('images-order')
+            new_order_dict = make_new_order(new_order)
+            for i in queryset:
+                if str(i.id) in new_order:
+                    i.order = new_order_dict[str(i.id)] * 100
+            Image.objects.bulk_update(queryset, ['order'])
+            for i in queryset:
+                if str(i.id) in new_order:
+                    i.order /= 100
+                    i.order = int(i.order)
+            Image.objects.bulk_update(queryset, ['order'])
+
+            # Добавляю новые фото
             max_order = get_order_num(product)
             for img_file in request.FILES.getlist('form-0-image'):
                 image_obj = Image()
@@ -190,7 +210,8 @@ def update_product(request, pk):
                 image_obj.order = max_order
                 image_obj.save()
                 max_order += 1
-            return redirect('shop')
+
+            return redirect('product', product.slug)
     else:
         form = ProductForm(instance=Product.objects.get(pk=pk))
         formset = ImageFormSet()
@@ -228,3 +249,7 @@ def update_product(request, pk):
     #     formset = ImageFormSet(queryset=queryset)
     #
     # return render(request, 'meappe/product_form.html', {'form': form, 'formset': formset})
+
+
+def test(request):
+    return render(request, 'meappe/test.html')

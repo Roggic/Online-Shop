@@ -1,19 +1,46 @@
 {% extends 'meappe/base.html' %}
 
 {% block content %}
+
+<script>
+    $( function() {
+        $( "#images-sortable" ).sortable({
+        revert: false,
+        cursorAt: { top: 20, left: 5 },
+        });
+        $( "#images-sortable" ).disableSelection();
+    } );
+</script>
+
+<script>
+    function delete_img(id) {
+        x = document.getElementById(id);
+        x.style.display = 'none';
+        y = document.querySelector(`#${id} input`);
+        y.name = 'images-delete';
+    };
+</script>
+
 <form action="" method="POST" enctype="multipart/form-data" id="left-side">
 {% csrf_token %}
     <div class="container-fluid pb-5">
         <div class="row px-xl-5">
             <div class="col-lg-6 mb-30 ">
-                <div class="h-100 bg-light p-30">
+                <div class="h-100 bg-light p-30" id="containment-wrapper">
                     <p><b>Фото:</b></p>
                         {{ formset.as_p }}
 
-                        {% for i in images %}
-                            {{ i.order }}
-                            <img src="{{ i.image.url }}" alt="" width="185">
-                        {% endfor %}
+                        <ul id="images-sortable">
+                            {% for i in images %}
+                                <li id="img{{ i.id }}" >
+                                    <input type="hidden" value="{{ i.id }}" name="images-order">
+                                    <div class="images-styling">
+                                        <img src="{{ i.image.url }}" alt="" width="185">
+                                        <div class="x-delete"><i class="fa-solid fa-xmark" onclick="delete_img('img{{ i.id  }}')"></i></div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
                 </div>
             </div>
 
