@@ -30,3 +30,57 @@
     padding: 0;
     color: #CC0000;
 }
+
+/*-----------------------------Добавление, Редактирование Товара------------------------------------*/
+#images-sortable {
+     list-style-type: none;
+     margin: 0;
+     padding: 0;
+     width: 900px;
+}
+
+#images-sortable li {
+    margin: 3px 3px 3px 0;
+    padding: 1px;
+    float: left;
+    width: 185px;
+    text-align: center;
+}
+
+#images-sortable li::marker {
+    content: '';
+}
+
+.images-styling {
+  position: relative;
+}
+
+.x-delete {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0px 7px;
+    color: #fff;
+    background-color: #000;
+}
+
+.images-styling:hover div {
+    display: block;
+}
+
+/*-----------------------------Конец Добавление, Редактирование Товара------------------------------------*/
+
+
+/*-----------------------------Страница Товаров------------------------------------*/
+.product-lines {
+    height: 2.1em;
+}
+
+.product-images {
+    width: 310px;
+    height: 420px;
+    object-fit: scale-down;
+}
+
+/*-----------------------------Конец Страница Товаров------------------------------------*/
