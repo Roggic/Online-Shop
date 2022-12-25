@@ -18,6 +18,7 @@
     display: inline-block;
     min-width: 150px;
     vertical-align: top;
+    font-weight: bold;
 }
 
 .form-input {
@@ -84,3 +85,40 @@
 }
 
 /*-----------------------------Конец Страница Товаров------------------------------------*/
+
+
+/*-----------------------------Аккаунт------------------------------------*/
+.account-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+/*-----------------------------Конец Аккаунт------------------------------------*/
+
+/*-----------------------------Корзина------------------------------------*/
+.cart-quantity {
+    width: 50px;
+    border: none;
+}
+
+.cart-delete {
+    display: none;
+}
+
+.inline-group {
+  max-width: 9rem;
+  padding: .5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.inline-group .cart-quantity {
+  text-align: center;
+}
+
+.cart-quantity[type="number"]::-webkit-inner-spin-button,
+.cart-quantity[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/*-----------------------------Конец Корзина------------------------------------*/

@@ -113,7 +113,7 @@
                             </div>
                             <div class="text-center py-4">
                                 <div class="d-flex align-items-center justify-content-center mb-1 product-lines">
-                                    <a class="h6 text-decoration-none text-truncate" href="product/{{ product.slug }}">
+                                    <a class="h6 text-decoration-none text-truncate" href="{% url 'product' product.slug %}">
                                         {{ product.name|truncatechars:30 }}
                                     </a>
                                 </div>

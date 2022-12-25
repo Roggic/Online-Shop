@@ -1,0 +1,25 @@
+{% extends 'meappe/base.html' %}
+{% block content %}
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="container-fluid pb-5">
+        <div class="row px-xl-5 d-flex justify-content-center">
+            <div class="col-lg-3 h-auto mb-30">
+                <div class="h-100 bg-light p-30">
+                    <div class="d-flex justify-content-center">Регистрация</div>
+
+                    {% for f in form %}
+                        <p><label for="{{ f.id_for_label }}" class="form-label">{{ f.label }}: </label>{{ f }}</p>
+                        <div class="form-error">{{ f.errors }}</div>
+                    {% endfor %}
+
+                    <button class="btn btn-primary" type="submit">Регистрация</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}

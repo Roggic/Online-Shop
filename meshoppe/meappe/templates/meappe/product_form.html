@@ -48,10 +48,8 @@
                 <div class="h-100 bg-light p-30">
                         <div class="form-error">{{ form.non_field_errors }}</div>
 
-                        <div class="form-error">{{ form.non_field_errors }}</div>
-
                         {% for f in form %}
-                            <p><b><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}: </label></b><br> {{ f }}</p>
+                            <p><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}: </label><br> {{ f }}</p>
                             <div class="form-error">{{ f.errors }}</div>
                         {% endfor %}
 
