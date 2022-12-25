@@ -1,14 +1,19 @@
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Max, Q
 from django.urls import reverse
 from slugify import slugify
+from django.core.validators import RegexValidator
 
 
-# from transliterate import slugify
+class ExtendedUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Телефон должен быть в формате +71234567890')
+    phone = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True, verbose_name='Телефон')
+    address = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Адрес')
 
 
-# Create your models here.
 class Console(models.Model):
     name = models.CharField(max_length=255, unique=True, verbose_name='Название')
     img = models.ImageField(upload_to='icons/consoles', null=True, blank=True, verbose_name='Иконка')
@@ -122,7 +127,7 @@ def make_new_order(lst):
 
 class Image(models.Model):
     image = models.ImageField(upload_to='photos/', null=True, blank=True, verbose_name='Фото')
-    product = models.ForeignKey(to='Product', null=True, blank=True, on_delete=models.CASCADE)
+    product = models.ForeignKey(to='Product', null=True, blank=True, on_delete=models.CASCADE, verbose_name='Товар')
     order = models.IntegerField(verbose_name='Порядок')
 
     def __str__(self):
@@ -138,3 +143,40 @@ class Image(models.Model):
                 name='unique_product_order',
             )
         ]
+
+
+class Order(models.Model):
+    STATUS_CHOICES = (
+        ('Оформлен', 'Оформлен'),
+        ('Подтвержден', 'Подтвержден'),
+        ('В обработке', 'В обработке'),
+        ('Отправлен', 'Отправлен'),
+        ('Доставлен', 'Доставлен'),
+        ('Отменен', 'Отменен'),
+    )
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, verbose_name='Клиент')
+    status = models.CharField(max_length=300, choices=STATUS_CHOICES, verbose_name='Статус')
+    paid = models.BooleanField(default=False, verbose_name='Оплачен')
+    datetime = models.DateTimeField(verbose_name='Дата и время')
+
+    def __str__(self):
+        return f'{self.id}'
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
+        ordering = ['-datetime']
+
+
+class OrderDetails(models.Model):
+    order = models.ForeignKey(to='Order', null=True, on_delete=models.SET_NULL, verbose_name='Заказ')
+    product = models.ForeignKey(to='Product', on_delete=models.CASCADE, verbose_name='Товар')
+    quantity = models.IntegerField(verbose_name='Количество')
+
+    def __str__(self):
+        return f'{self.order} | {self.product}'
+
+    class Meta:
+        verbose_name = 'Детали заказа'
+        verbose_name_plural = 'Детали заказов'
+        ordering = ['-id']

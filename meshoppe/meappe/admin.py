@@ -1,10 +1,21 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 
 from .models import *
 
 
-# Register your models here.
+class ExtendedUserInline(admin.StackedInline):
+    model = ExtendedUser
+    can_delete = False
+    verbose_name = 'Дополнительно'
+
+
+class UserAdmin(BaseUserAdmin):
+    inlines = (ExtendedUserInline, )
+
+
 class ConsoleAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'get_html_photo')
     list_display_links = ('id', 'name')
@@ -90,13 +101,33 @@ class ImageAdmin(admin.ModelAdmin):
     get_html_photo.short_description = 'Миниатюра'
 
 
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'status', 'paid', 'datetime')
+    list_display_links = ('id', )
+    list_editable = ('status', 'paid',)
+    search_fields = ('user', )
+    fields = ('id', 'user', 'status', 'paid', 'datetime')
+    readonly_fields = ('id', )
+
+
+class OrderDetailsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order', 'product', 'quantity')
+    list_display_links = ('id', )
+    search_fields = ('product', )
+    fields = ('id', 'order', 'product', 'quantity')
+    readonly_fields = ('id', )
+
+
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 admin.site.register(Console, ConsoleAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Localization, LocalizationAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Image, ImageAdmin)
-
+admin.site.register(Order, OrderAdmin)
+admin.site.register(OrderDetails, OrderDetailsAdmin)
 
 admin.site.site_title = 'Админ панель магазина MeShoppe'
 admin.site.site_header = 'Админ панель магазина MeShoppe'
