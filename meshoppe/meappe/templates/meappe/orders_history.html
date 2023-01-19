@@ -1,0 +1,45 @@
+{% extends 'meappe/base.html' %}
+
+{% block content %}
+
+{% for order in orders %}
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col-lg-8 table-responsive mb-5">
+                <div class="bg-light p-30">
+                    <h4>Заказ: {{ order.id }}</h4>
+                    <p>От {{ order.datetime }}</p>
+                    <p><b>Статус:</b> {{ order.status }}</p>
+                    <p><b>Оплата:</b>{% if order.paid %} Оплачен {% else %} Не оплачен {% endif %}</p>
+                    <p><b>Сумма заказа:</b> {{ order.sum }} руб.</p>
+                </div>
+                <table class="table table-light table-borderless table-hover text-center mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Фото</th>
+                            <th>Товар</th>
+                            <th>Цена</th>
+                            <th>Количество</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody class="align-middle">
+                    {% for order_detail in order.order_details %}
+                        <tr>
+                            <td class="align-middle"><img src="{{ order_detail.image.image.url }}" alt="" style="width: 50px;"></td>
+                            <td class="align-middle"><a class="h6" href="{% url 'product' order_detail.product.slug %}">{{ order_detail.product.name }}</a></td>
+                            <td class="price align-middle">{{ order_detail.price|floatformat:"0" }} руб.</td>
+                            <td class="price align-middle">{{ order_detail.quantity }}</td>
+                            <td class="full-price align-middle">{% widthratio order_detail.price 1 order_detail.quantity %} руб.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+
+
+{% endblock %}

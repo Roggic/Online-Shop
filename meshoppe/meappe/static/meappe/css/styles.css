@@ -32,6 +32,9 @@
     color: #CC0000;
 }
 
+text-shadow {
+    text-shadow: black 0px 0px 5px;
+}
 /*-----------------------------Добавление, Редактирование Товара------------------------------------*/
 #images-sortable {
      list-style-type: none;

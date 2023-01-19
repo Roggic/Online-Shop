@@ -1,21 +1,9 @@
 {% extends 'meappe/base.html' %}
 {% load static %}
+{% load index %}
 
 {% block content %}
-
-<!-- Breadcrumb Start -->
-<div class="container-fluid">
-    <div class="row px-xl-5">
-        <div class="col-12">
-            <nav class="breadcrumb bg-light mb-30">
-                <a class="breadcrumb-item text-dark" href="#">Home</a>
-                <a class="breadcrumb-item text-dark" href="#">Shop</a>
-                <span class="breadcrumb-item active">Shop Detail</span>
-            </nav>
-        </div>
-    </div>
-</div>
-<!-- Breadcrumb End -->
+<script src="{% static 'meappe/js/cart.js' %}"></script>
 
 <!-- Shop Detail Start -->
 <div class="container-fluid pb-5">
@@ -45,8 +33,10 @@
             <div class="h-100 bg-light p-30">
                 <h3>
                     {{ product.name }}
-                    <a class="btn btn-primary" href="{% url 'update_product' product.id %}"><i class="fa-regular fa-pen-to-square"></i></a>
-                    <a class="btn btn-danger" href="{% url 'delete_product' product.id %}"><i class="fa-solid fa-trash"></i></a>
+                     {% if request.user|has_group:"Администраторы" %}
+                        <a class="btn btn-primary" href="{% url 'update_product' product.id %}"><i class="fa-regular fa-pen-to-square"></i></a>
+                        <a class="btn btn-danger" href="{% url 'delete_product' product.id %}"><i class="fa-solid fa-trash"></i></a>
+                    {% endif %}
                 </h3>
 
                 <h3 class="font-weight-semi-bold mb-4">{{ product.price|floatformat:"0" }} руб.</h3>
@@ -83,22 +73,27 @@
                     {{ product.release_date }}
                 </p>
                 {% endif %}
-                <div class="d-flex align-items-center mb-4 pt-2">
-                    <div class="input-group quantity mr-3" style="width: 130px;">
-                        <div class="input-group-btn">
-                            <button class="btn btn-primary btn-minus">
-                                <i class="fa fa-minus"></i>
-                            </button>
-                        </div>
-                        <input type="text" class="form-control bg-secondary border-0 text-center" value="1">
-                        <div class="input-group-btn">
-                            <button class="btn btn-primary btn-plus">
-                                <i class="fa fa-plus"></i>
-                            </button>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="d-inline-block mb-4 pt-2">
+                        <div class="input-group inline-group">
+                          <div class="input-group-prepend">
+                            <span class="btn btn-sm btn-primary btn-minus">
+                              <i class="fa fa-minus"></i>
+                            </span>
+                          </div>
+                          {{ form.quantity }}
+                          <div class="input-group-append">
+                            <span class="btn btn-sm btn-primary btn-plus">
+                              <i class="fa fa-plus"></i>
+                            </span>
+                          </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary px-3"><i class="fa fa-shopping-cart mr-1"></i> В корзину</button>
-                </div>
+                        <button class="btn btn-primary px-3"><i class="fa fa-shopping-cart mr-1"></i> В корзину</button>
+                </form>
+
             </div>
         </div>
     </div>

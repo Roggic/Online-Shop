@@ -85,5 +85,14 @@ class CartForm(forms.ModelForm):
         fields = ['product', 'quantity']
         widgets = {
             'product': forms.HiddenInput(),
-            'quantity': forms.NumberInput(attrs={'class': 'qt cart-quantity', 'min': 1})
+            'quantity': forms.NumberInput(attrs={'class': 'qt cart-quantity', 'min': 1, 'value': 1})
         }
+
+
+class PaymentForm(forms.Form):
+    choices = (
+        ('Online', 'Онлайн'),
+        ('Courier Card', 'Картой курьеру'),
+        ('Courier Cash', 'Наличными курьеру'),
+    )
+    payment = forms.ChoiceField(choices=choices, widget=forms.RadioSelect(), required=True, label='')

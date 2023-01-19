@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, ListView, CreateView, UpdateView, DeleteView
+from django.views.generic.edit import FormMixin
 from django_filters import OrderingFilter
 from django_filters.widgets import RangeWidget
 from django.contrib.auth import logout, login
@@ -19,7 +20,11 @@ from .models import *
 
 
 def home(request):
-    return render(request, 'meappe/index.html')
+    queryset = Product.objects.filter(in_stock=True)[:8]
+    images = Image.objects.filter(product__in_stock=True)
+    for product in queryset:
+        product.images = images.filter(product_id=product.id)
+    return render(request, 'meappe/index.html', {'featured': queryset})
 
 
 def distinct_values(field, field_related='name'):
@@ -35,41 +40,43 @@ def distinct_values(field, field_related='name'):
 
 
 class ProductFilter(django_filters.FilterSet):
-    category = django_filters.MultipleChoiceFilter(
-        choices=[(i['category__id'], i['category__name'])
-                 for i in distinct_values(field='category').exclude(category__name__isnull=True)],
-        widget=forms.CheckboxSelectMultiple)
-
-    console = django_filters.MultipleChoiceFilter(
-        choices=[(i['console__id'], i['console__name'])
-                 for i in distinct_values(field='console').exclude(console__name__isnull=True)],
-        widget=forms.CheckboxSelectMultiple)
+    # category = django_filters.MultipleChoiceFilter(
+    #     choices=[(i['category__id'], i['category__name'])
+    #              for i in distinct_values(field='category').exclude(category__name__isnull=True)],
+    #     widget=forms.CheckboxSelectMultiple)
+    #
+    # console = django_filters.MultipleChoiceFilter(
+    #     choices=[(i['console__id'], i['console__name'])
+    #              for i in distinct_values(field='console').exclude(console__name__isnull=True)],
+    #     widget=forms.CheckboxSelectMultiple)
+    #
+    # genre = django_filters.MultipleChoiceFilter(
+    #     choices=[(i['genre__id'], i['genre__name'])
+    #              for i in distinct_values(field='genre').exclude(genre__name__isnull=True)],
+    #     widget=forms.CheckboxSelectMultiple)
+    #
+    # localization = django_filters.MultipleChoiceFilter(
+    #     choices=[(i['localization__id'], i['localization__language'])
+    #              for i in distinct_values(field='localization', field_related='language').exclude(
+    #             localization__language__isnull=True)],
+    #     widget=forms.CheckboxSelectMultiple)
+    category = django_filters.ModelMultipleChoiceFilter(queryset=Category.objects.all(), widget=forms.CheckboxSelectMultiple)
+    console = django_filters.ModelMultipleChoiceFilter(queryset=Console.objects.all(), widget=forms.CheckboxSelectMultiple)
+    genre = django_filters.ModelMultipleChoiceFilter(queryset=Genre.objects.all(), widget=forms.CheckboxSelectMultiple)
+    localization = django_filters.ModelMultipleChoiceFilter(queryset=Localization.objects.all(), widget=forms.CheckboxSelectMultiple)
 
     price = django_filters.RangeFilter(field_name='price', label='Цена',
                                        widget=RangeWidget(attrs={'placeholder': '0', 'class': 'short-width'}))
 
-    genre = django_filters.MultipleChoiceFilter(
-        choices=[(i['genre__id'], i['genre__name'])
-                 for i in distinct_values(field='genre').exclude(genre__name__isnull=True)],
-        widget=forms.CheckboxSelectMultiple)
-
-    localization = django_filters.MultipleChoiceFilter(
-        choices=[(i['localization__id'], i['localization__language'])
-                 for i in distinct_values(field='localization', field_related='language').exclude(
-                localization__language__isnull=True)],
-        widget=forms.CheckboxSelectMultiple)
-
     sort = OrderingFilter(fields=(('price', 'price'), ('release_date', 'release_date')),
                           field_labels={'price': 'по цене', 'release_date': 'по дате выхода'}, label='Сортировать')
 
+    name = django_filters.CharFilter(lookup_expr='icontains', label='Поиск',
+                                     widget=forms.TextInput(attrs={'placeholder': 'Найти...', 'class': 'form-control'}))
+
     class Meta:
         model = Product
-        fields = {
-            'category': ['exact'],
-            'console': ['exact'],
-            'genre': ['exact'],
-            'localization': ['exact'],
-        }
+        fields = ['category', 'console', 'genre', 'localization']
 
 
 class ShopPage(ListView):
@@ -106,11 +113,17 @@ class ShopPage(ListView):
     #     return ordering
 
 
-class ProductPage(DetailView):
+def get_active_order(user):
+    active_order = Order.objects.filter(Q(user=user), Q(status='Создан'))
+    return active_order[0] if active_order else False
+
+
+class ProductPage(DetailView, FormMixin):
     model = Product
     template_name = 'meappe/product.html'
     context_object_name = 'product'
     slug_url_kwarg = 'product_slug'
+    form_class = CartForm
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -119,6 +132,40 @@ class ProductPage(DetailView):
         context['genres'] = Genre.objects.filter(products=self.object)
         context['localizations'] = Localization.objects.filter(products=self.object)
         return dict(list(context.items()))
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        slug = self.kwargs.get(self.slug_url_kwarg, None)
+        updated_request = request.POST.copy()
+        product = Product.objects.get(slug=slug)
+        quantity = int(updated_request['quantity'])
+        updated_request.update({'product': product})
+        updated_form = CartForm(updated_request)
+        if updated_form.is_valid():
+            # Логика добавления товара в корзину
+            active_order = get_active_order(user)
+            if active_order:  # Если заказ есть
+                order_details = OrderDetails.objects.filter(Q(order=active_order), Q(product=product))
+                if order_details.count() > 0:  # Если товар в корзине
+                    # Увеличить количество
+                    product_in_order = order_details[0]
+                    product_in_order.quantity += quantity
+                    product_in_order.save()
+                else:
+                    # Добавить к заказу
+                    new_order_detail = OrderDetails(order=active_order, product=product,
+                                                    price=product.price, quantity=quantity)
+                    new_order_detail.save()
+            else:
+                # Создать заказ
+                new_order = Order(user=user, status='Создан', paid=False, datetime=datetime.now())
+                new_order.save()
+                # Добавить к заказу
+                new_order_detail = OrderDetails(order=new_order, product=product,
+                                                price=product.price, quantity=quantity)
+                new_order_detail.save()
+
+        return HttpResponseRedirect(self.request.path_info)
 
 
 def add_product(request):
@@ -194,6 +241,10 @@ class DeleteProduct(DeleteView):
     model = Product
     success_url = reverse_lazy('shop')
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return dict(list(context.items()))
+
 
 class RegisterUser(CreateView):
     form_class = RegisterUserForm
@@ -239,22 +290,20 @@ def update_account(request, slug):
     return render(request, 'meappe/account.html', {'form': form, 'form2': form2})
 
 
-# https://stackoverflow.com/questions/23510627/where-to-store-orders-for-non-registered-users-on-e-commerce-site
 def cart(request):
     current_user = request.user
     CartFormSet = modelformset_factory(OrderDetails, CartForm, extra=0, can_delete=True)
-    queryset = OrderDetails.objects.filter(order__user=current_user)
+    queryset = OrderDetails.objects.filter(Q(order__user=current_user), Q(order__status='Создан'))
     images = Image.objects.filter(product__in_stock=True)
     for product in queryset:
         product.images = images.filter(product_id=product.product.id).first()
 
     if current_user.is_authenticated:
         if request.method == 'POST':
-            print(request.POST)
             formset = CartFormSet(request.POST, queryset=queryset)
             if formset.is_valid():
                 formset.save()
-                return render(request, 'meappe/checkout.html')
+                return redirect('checkout')
         else:
             formset = CartFormSet(queryset=queryset)
             return render(request, 'meappe/cart.html', {'formset': formset})
@@ -263,7 +312,69 @@ def cart(request):
 
 
 def checkout(request):
-    return render(request, 'meappe/checkout.html')
+    user = request.user
+    try:
+        extended_user = ExtendedUser.objects.get(user=user.id)
+    except ObjectDoesNotExist:
+        extended_user = ExtendedUser(user=user, phone='', address='')
+
+    order_details = OrderDetails.objects.filter(Q(order__user=user), Q(order__status='Создан'))
+    images = Image.objects.filter(product__in_stock=True)
+    for product in order_details:
+        product.images = images.filter(product_id=product.product.id).first()
+
+    if request.method == 'POST':
+        form = UserForm(request.POST, instance=user)
+        form2 = ExtendedUserForm(request.POST, instance=extended_user)
+        payment = PaymentForm(request.POST)
+        if all([form.is_valid(), form2.is_valid(), payment.is_valid()]):
+            form.save()
+            form2.save()
+            return redirect('order_confirmed')
+    else:
+        form = UserForm(instance=user)
+        form2 = ExtendedUserForm(instance=extended_user)
+        payment = PaymentForm()
+
+    return render(request, 'meappe/checkout.html', {'form': form, 'form2': form2,
+                                                    'order_details': order_details, 'payment': payment})
+
+
+def order_confirmed(request):
+    user = request.user
+    active_order = get_active_order(user)
+    active_order.status = 'Оформлен'
+    active_order.save()
+    return render(request, 'meappe/order_confirmed.html')
+
+
+class OrdersHistory(ListView):
+    paginate_by = 5
+    model = Order
+    template_name = 'meappe/orders_history.html'
+    context_object_name = 'orders'
+    ordering = ['-datetime']
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        orders = self.get_queryset()
+        order_details = OrderDetails.objects.filter(order__user=self.request.user)
+        products = [order_detail.product for order_detail in order_details]
+        images = Image.objects.filter(product__in=products)
+        for order in orders:
+            order.order_details = order_details.filter(order=order)
+            order.sum = 0
+            for order_detail in order.order_details:
+                order_detail.image = images.filter(product_id=order_detail.product.id).first()
+                order.sum += order_detail.price * order_detail.quantity
+
+        context['orders'] = orders
+        context['order_details'] = order_details
+        context['images'] = images
+        return dict(list(context.items()))
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)
 
 
 def contact(request):

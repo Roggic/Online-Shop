@@ -62,7 +62,7 @@ class LocalizationAdmin(admin.ModelAdmin):
     list_display = ('id', 'language',)
     list_display_links = ('id', 'language')
     search_fields = ('language',)
-    fields = ('language', 'img',)
+    fields = ('language',)
 
 
 class ProductAdmin(admin.ModelAdmin):
@@ -111,10 +111,10 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 class OrderDetailsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'order', 'product', 'quantity')
+    list_display = ('id', 'order', 'product', 'price', 'quantity')
     list_display_links = ('id', )
     search_fields = ('product', )
-    fields = ('id', 'order', 'product', 'quantity')
+    fields = ('id', 'order', 'product', 'price', 'quantity')
     readonly_fields = ('id', )
 
 

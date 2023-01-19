@@ -7,14 +7,22 @@ from slugify import slugify
 from django.core.validators import RegexValidator
 
 
-class ExtendedUser(models.Model):
+# Чтобы PyCharm не подчеркивал objects в MyClass.objects.filter
+class BaseModel(models.Model):
+    objects = models.Manager()
+
+    class Meta:
+        abstract = True
+
+
+class ExtendedUser(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone_regex = RegexValidator(regex=r'^\+?\d{9,15}$', message='Телефон должен быть в формате +71234567890')
     phone = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True, verbose_name='Телефон')
     address = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Адрес')
 
 
-class Console(models.Model):
+class Console(BaseModel):
     name = models.CharField(max_length=255, unique=True, verbose_name='Название')
     img = models.ImageField(upload_to='icons/consoles', null=True, blank=True, verbose_name='Иконка')
 
@@ -27,7 +35,7 @@ class Console(models.Model):
         ordering = ['name']
 
 
-class Category(models.Model):
+class Category(BaseModel):
     name = models.CharField(max_length=255, unique=True, verbose_name='Название')
     img = models.ImageField(upload_to='icons/categories', null=True, blank=True, verbose_name='Иконка')
 
@@ -40,7 +48,7 @@ class Category(models.Model):
         ordering = ['name']
 
 
-class Genre(models.Model):
+class Genre(BaseModel):
     name = models.CharField(max_length=255, unique=True, verbose_name='Название')
     img = models.ImageField(upload_to='icons/genres', null=True, blank=True, verbose_name='Иконка')
 
@@ -53,7 +61,7 @@ class Genre(models.Model):
         ordering = ['name']
 
 
-class Localization(models.Model):
+class Localization(BaseModel):
     language = models.CharField(max_length=255, unique=True, verbose_name='Язык')
 
     def __str__(self):
@@ -70,7 +78,7 @@ def img_path(instance, filename):
     return f'images/{text_en}/{filename}'
 
 
-class Product(models.Model):
+class Product(BaseModel):
     name = models.CharField(max_length=300, verbose_name='Название')
     slug = models.SlugField(allow_unicode=True, max_length=300, unique=True, db_index=True, verbose_name='URL')
     price = models.FloatField(verbose_name='Цена')
@@ -125,7 +133,7 @@ def make_new_order(lst):
     return {f'{v}': i + 1 for i, v in enumerate(lst)}
 
 
-class Image(models.Model):
+class Image(BaseModel):
     image = models.ImageField(upload_to='photos/', null=True, blank=True, verbose_name='Фото')
     product = models.ForeignKey(to='Product', null=True, blank=True, on_delete=models.CASCADE, verbose_name='Товар')
     order = models.IntegerField(verbose_name='Порядок')
@@ -145,8 +153,9 @@ class Image(models.Model):
         ]
 
 
-class Order(models.Model):
+class Order(BaseModel):
     STATUS_CHOICES = (
+        ('Создан', 'Создан'),
         ('Оформлен', 'Оформлен'),
         ('Подтвержден', 'Подтвержден'),
         ('В обработке', 'В обработке'),
@@ -168,9 +177,10 @@ class Order(models.Model):
         ordering = ['-datetime']
 
 
-class OrderDetails(models.Model):
+class OrderDetails(BaseModel):
     order = models.ForeignKey(to='Order', null=True, on_delete=models.SET_NULL, verbose_name='Заказ')
     product = models.ForeignKey(to='Product', on_delete=models.CASCADE, verbose_name='Товар')
+    price = models.IntegerField(verbose_name='Цена')
     quantity = models.IntegerField(verbose_name='Количество')
 
     def __str__(self):

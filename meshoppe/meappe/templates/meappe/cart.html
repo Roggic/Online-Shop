@@ -5,75 +5,60 @@
 {% block content %}
 <script src="{% static 'meappe/js/cart.js' %}"></script>
 
-<!-- Breadcrumb Start -->
-<div class="container-fluid">
-    <div class="row px-xl-5">
-        <div class="col-12">
-            <nav class="breadcrumb bg-light mb-30">
-                <a class="breadcrumb-item text-dark" href="#">Home</a>
-                <a class="breadcrumb-item text-dark" href="#">Shop</a>
-                <span class="breadcrumb-item active">Shopping Cart</span>
-            </nav>
-        </div>
-    </div>
-</div>
-<!-- Breadcrumb End -->
-
-
 <!-- Cart Start -->
 <form method="POST">
     {{ formset.management_form }}
     <div class="container-fluid">
         <div class="row px-xl-5">
             {% csrf_token %}
-            <div class="col-lg-8 table-responsive mb-5">
-                <table class="table table-light table-borderless table-hover text-center mb-0">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Фото</th>
-                            <th>Товар</th>
-                            <th>Цена</th>
-                            <th>Количество</th>
-                            <th>Сумма</th>
-                            <th>Убрать</th>
-                        </tr>
-                    </thead>
-                    <tbody class="align-middle">
-                        {% for form in formset %}
-                        {% with formset.queryset|index:forloop.counter0 as fqs %}
-                        <tr class="content">
-                            <td class="align-middle"><img src="{{ fqs.images.image.url }}" alt="" style="width: 50px;"></td>
-                            <td class="align-middle"><a class="h6" href="{% url 'product' fqs.product.slug %}">{{ fqs.product.name }}</a></td>
-                            {{ form.id }}
-                            {{ form.product }}
-                            <td class="price align-middle">{{ fqs.product.price|floatformat:"0" }} руб.</td>
-                            <td class="align-middle">
-                                <div class="input-group inline-group">
-                                  <div class="input-group-prepend">
-                                    <span class="btn btn-sm btn-primary btn-minus">
-                                      <i class="fa fa-minus"></i>
-                                    </span>
-                                  </div>
-                                  {{ form.quantity }}
-                                  <div class="input-group-append">
-                                    <span class="btn btn-sm btn-primary btn-plus">
-                                      <i class="fa fa-plus"></i>
-                                    </span>
-                                  </div>
-                                </div>
-                             </td>
-                            <td class="full-price align-middle">{% widthratio fqs.product.price 1 fqs.quantity %} руб.</td>
-                            <td class="align-middle"><span class="btn btn-danger remove"><i class="fa fa-times"></i></span>
-                                <span class="cart-delete">{{ form.DELETE }}</span>
-                            </td>
+            {% if formset|length > 0 %}
+                <div class="col-lg-8 table-responsive mb-5">
+                    <table class="table table-light table-borderless table-hover text-center mb-0">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Фото</th>
+                                <th>Товар</th>
+                                <th>Цена</th>
+                                <th>Количество</th>
+                                <th>Сумма</th>
+                                <th>Убрать</th>
+                            </tr>
+                        </thead>
+                        <tbody class="align-middle">
+                            {% for form in formset %}
+                            {% with formset.queryset|index:forloop.counter0 as fqs %}
+                            <tr class="content">
+                                <td class="align-middle"><img src="{{ fqs.images.image.url }}" alt="" style="width: 50px;"></td>
+                                <td class="align-middle"><a class="h6" href="{% url 'product' fqs.product.slug %}">{{ fqs.product.name }}</a></td>
+                                {{ form.id }}
+                                {{ form.product }}
+                                <td class="price align-middle">{{ fqs.price|floatformat:"0" }} руб. {{ form.price }}</td>
+                                <td class="align-middle">
+                                    <div class="input-group inline-group">
+                                      <div class="input-group-prepend">
+                                        <span class="btn btn-sm btn-primary btn-minus">
+                                          <i class="fa fa-minus"></i>
+                                        </span>
+                                      </div>
+                                      {{ form.quantity }}
+                                      <div class="input-group-append">
+                                        <span class="btn btn-sm btn-primary btn-plus">
+                                          <i class="fa fa-plus"></i>
+                                        </span>
+                                      </div>
+                                    </div>
+                                 </td>
+                                <td class="full-price align-middle">{% widthratio fqs.price 1 fqs.quantity %} руб.</td>
+                                <td class="align-middle"><span class="btn btn-danger remove"><i class="fa fa-times"></i></span>
+                                    <span class="cart-delete">{{ form.DELETE }}</span>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-                        </tr>
-                        {% endwith %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-            </div>
             <div class="col-lg-4">
                 <div class="input-group">
                     <input type="text" class="form-control border-0 p-4" placeholder="Промокод">
@@ -99,10 +84,15 @@
                             <h5>Итого</h5>
                             <h5 class="total"></h5>
                         </div>
-                        <a href="{% url 'checkout' %}"><button type="submit" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Перейти к оплате</button></a>
+                        <a href="{% url 'checkout' %}"><button type="submit" class="btn btn-block btn-primary font-weight-bold my-3 py-3">ПЕРЕЙТИ К ДОСТАВКЕ</button></a>
                     </div>
                 </div>
             </div>
+            {% else %}
+                <div class="col-lg-12 d-flex justify-content-center bg-light p-30 mb-5">
+                    <h4>В корзине пусто: <a href="{% url 'shop' %}">перейти в товары</a></h4>
+                </div>
+            {% endif %}
         </div>
     </div>
 </form>

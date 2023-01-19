@@ -9575,7 +9575,7 @@ a.text-dark:hover, a.text-dark:focus {
   position: absolute;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: .5s;
 }
 
@@ -9600,10 +9600,6 @@ a.text-dark:hover, a.text-dark:focus {
 .cat-item {
   background: #FFFFFF;
   transition: .5s;
-}
-
-.cat-item:hover {
-  background: #FFD333;
 }
 
 .cat-item img {
