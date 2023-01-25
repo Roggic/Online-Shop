@@ -135,37 +135,40 @@ class ProductPage(DetailView, FormMixin):
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        slug = self.kwargs.get(self.slug_url_kwarg, None)
-        updated_request = request.POST.copy()
-        product = Product.objects.get(slug=slug)
-        quantity = int(updated_request['quantity'])
-        updated_request.update({'product': product})
-        updated_form = CartForm(updated_request)
-        if updated_form.is_valid():
-            # Логика добавления товара в корзину
-            active_order = get_active_order(user)
-            if active_order:  # Если заказ есть
-                order_details = OrderDetails.objects.filter(Q(order=active_order), Q(product=product))
-                if order_details.count() > 0:  # Если товар в корзине
-                    # Увеличить количество
-                    product_in_order = order_details[0]
-                    product_in_order.quantity += quantity
-                    product_in_order.save()
+        if user.is_authenticated:
+            slug = self.kwargs.get(self.slug_url_kwarg, None)
+            updated_request = request.POST.copy()
+            product = Product.objects.get(slug=slug)
+            quantity = int(updated_request['quantity'])
+            updated_request.update({'product': product})
+            updated_form = CartForm(updated_request)
+            if updated_form.is_valid():
+                # Логика добавления товара в корзину
+                active_order = get_active_order(user)
+                if active_order:  # Если заказ есть
+                    order_details = OrderDetails.objects.filter(Q(order=active_order), Q(product=product))
+                    if order_details.count() > 0:  # Если товар в корзине
+                        # Увеличить количество
+                        product_in_order = order_details[0]
+                        product_in_order.quantity += quantity
+                        product_in_order.save()
+                    else:
+                        # Добавить к заказу
+                        new_order_detail = OrderDetails(order=active_order, product=product,
+                                                        price=product.price, quantity=quantity)
+                        new_order_detail.save()
                 else:
+                    # Создать заказ
+                    new_order = Order(user=user, status='Создан', paid=False, datetime=datetime.now())
+                    new_order.save()
                     # Добавить к заказу
-                    new_order_detail = OrderDetails(order=active_order, product=product,
+                    new_order_detail = OrderDetails(order=new_order, product=product,
                                                     price=product.price, quantity=quantity)
                     new_order_detail.save()
-            else:
-                # Создать заказ
-                new_order = Order(user=user, status='Создан', paid=False, datetime=datetime.now())
-                new_order.save()
-                # Добавить к заказу
-                new_order_detail = OrderDetails(order=new_order, product=product,
-                                                price=product.price, quantity=quantity)
-                new_order_detail.save()
 
-        return HttpResponseRedirect(self.request.path_info)
+            return HttpResponseRedirect(self.request.path_info)
+        else:
+            return redirect('login')
 
 
 def add_product(request):
