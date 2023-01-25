@@ -33,6 +33,7 @@
             <div class="h-100 bg-light p-30">
                 <h3>
                     {{ product.name }}
+
                      {% if request.user|has_group:"Администраторы" or request.user|has_group:"Демо" %}
                         <a class="btn btn-primary" href="{% url 'update_product' product.id %}"><i class="fa-regular fa-pen-to-square"></i></a>
                         <a class="btn btn-danger" href="{% url 'delete_product' product.id %}"><i class="fa-solid fa-trash"></i></a>

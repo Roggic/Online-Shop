@@ -49,7 +49,7 @@
                                 {% endfor %}
                             </form>
                         </div>
-                        {% if request.user|has_group:"Администраторы" %}
+                        {% if request.user|has_group:"Администраторы" or request.user|has_group:"Демо" %}
                             <div>
                                 <a class="btn btn-primary" href="{% url 'add_product' %}">Добавить</a>
                             </div>
@@ -95,7 +95,7 @@
                             <!--Конец Фото товара-->
 
                             <!--Кнопки при наведении-->
-                            {% if request.user|has_group:"Администраторы" %}
+                            {% if request.user|has_group:"Администраторы" or request.user|has_group:"Демо" %}
                                 <div class="product-lines">
                                     <div class="product-action">
                                         <a class="btn btn-outline-dark btn-square" href="{% url 'update_product' product.id %}"><i class="fa-regular fa-pen-to-square"></i></a>
